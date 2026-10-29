@@ -23,4 +23,4 @@ where = ["src"]
 testpaths = ["tests"]
 
 [tool.setuptools.package-data]
-tracewright = ["static/*", "migrations/*.py", "migrations/versions/*.py"]
+tracewright = ["static/*", "fixtures/*.json", "migrations/*.py", "migrations/versions/*.py"]

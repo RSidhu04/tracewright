@@ -71,7 +71,7 @@ def main(argv=None):
             result=import_report(json.loads(Path(args.report).read_text()),json.loads(Path(args.manifest).read_text()),args.revision)
             store.save(result); print(result['id']); return 0
         if args.command == 'demo':
-            suite=Suite(name='calculator',version='1.0.0',cases=[{'id':name,'input':{'a':a,'b':b},'assertions':[{'kind':'equals','path':['answer'],'expected':a+b}]} for name,a,b in [('positive',2,3),('negative',-5,2),('zero',2,-2),('both-negative',-2,-3)]])
+            suite=Suite.model_validate_json((Path(__file__).parent/'fixtures/calculator.v2.json').read_text())
             a=evaluate(suite,'tracewright.sample:baseline',agent_ref='tracewright.sample:baseline',revision='demo-baseline')
             b=evaluate(suite,'tracewright.sample:candidate',agent_ref='tracewright.sample:candidate',revision='demo-candidate')
             store.save(a);store.save(b)

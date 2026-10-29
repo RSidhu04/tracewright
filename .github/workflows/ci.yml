@@ -34,8 +34,8 @@ jobs:
       - name: Verify observed and statistical gate behavior
         shell: bash
         run: |
-          baseline=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:baseline --revision sample-v1 --repeats 3)
-          candidate=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:candidate --revision sample-v2 --repeats 3)
+          baseline=$(tracewright run examples/calculator.v2.json --agent tracewright.sample:baseline --revision sample-v1 --repeats 3)
+          candidate=$(tracewright run examples/calculator.v2.json --agent tracewright.sample:candidate --revision sample-v2 --repeats 3)
           set +e
           tracewright compare "$baseline" "$candidate" --output reports/comparison.json
           status=$?
@@ -69,3 +69,54 @@ jobs:
         run: |
           docker compose logs --no-color
           docker compose down -v
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan full Git history with verified Gitleaks binary
+        run: |
+          curl -fsSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          mkdir -p reports
+          /tmp/gitleaks detect --source . --redact --report-format json --report-path reports/gitleaks.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: secret-scan
+          path: reports/gitleaks.json
+  pr-summary:
+    needs: test
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: evidence-python-3.12
+          path: evidence
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // No checkout or execution of PR code in this write-enabled job.
+            const fs = require('fs');
+            const r = JSON.parse(fs.readFileSync('evidence/comparison.json', 'utf8'));
+            for (const key of ['baseline_pass_rate', 'candidate_pass_rate']) {
+              if (!Number.isFinite(r[key]) || r[key] < 0 || r[key] > 1) throw new Error('Invalid rate');
+            }
+            if (!Number.isFinite(r.delta) || Math.abs(r.delta) > 1 || !Array.isArray(r.observed_regressions)) throw new Error('Invalid report');
+            if (!['inconclusive', 'regression', 'noninferior'].includes(r.statistical_status)) throw new Error('Invalid status');
+            const marker = '<!-- tracewright-comparison -->';
+            const body = `${marker}\n### Tracewright comparison\n\nSynthetic calculator demo at commit \`${context.payload.pull_request.head.sha}\`.\n\n| Metric | Result |\n|---|---|\n| Baseline | ${(r.baseline_pass_rate*100).toFixed(1)}% |\n| Candidate | ${(r.candidate_pass_rate*100).toFixed(1)}% |\n| Change | ${(r.delta*100).toFixed(1)} pp |\n| Observed regressions | ${r.observed_regressions.length} |\n| Statistical evidence | ${r.statistical_status} |\n\nThe candidate is intentionally broken. This workflow passes only when its observed regression gate fails as expected; this is not a live LLM benchmark.\n\n[CI evidence](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            const args = {...context.repo, issue_number: context.issue.number};
+            const comments = await github.paginate(github.rest.issues.listComments, args);
+            const previous = comments.find(c => c.user.login === 'github-actions[bot]' && c.body.startsWith(marker));
+            if (previous) await github.rest.issues.updateComment({...context.repo, comment_id:previous.id, body});
+            else await github.rest.issues.createComment({...args, body});

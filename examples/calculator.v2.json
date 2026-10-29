@@ -1,0 +1,457 @@
+{
+  "schema_version": 1,
+  "name": "calculator",
+  "version": "2.0.0",
+  "cases": [
+    {
+      "id": "add-positive",
+      "input": {
+        "a": 2,
+        "b": 3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "add-negative",
+      "input": {
+        "a": -5,
+        "b": 2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": -3
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "add-zero",
+      "input": {
+        "a": 2,
+        "b": -2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 0
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "add-both-negative",
+      "input": {
+        "a": -2,
+        "b": -3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": -5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "add-decimal",
+      "input": {
+        "a": 0.25,
+        "b": 0.5
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 0.75
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "add-large",
+      "input": {
+        "a": 1000000000000,
+        "b": 1
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 1000000000001
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "subtract-positive",
+      "input": {
+        "operation": "subtract",
+        "a": 9,
+        "b": 4
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "subtract-negative",
+      "input": {
+        "operation": "subtract",
+        "a": 4,
+        "b": 9
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": -5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "subtract-equal",
+      "input": {
+        "operation": "subtract",
+        "a": 7,
+        "b": 7
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 0
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "multiply-positive",
+      "input": {
+        "operation": "multiply",
+        "a": 6,
+        "b": 7
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 42
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "multiply-negative",
+      "input": {
+        "operation": "multiply",
+        "a": -6,
+        "b": 7
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": -42
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "multiply-zero",
+      "input": {
+        "operation": "multiply",
+        "a": 0,
+        "b": 1000000000000
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 0
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "multiply-two-negatives",
+      "input": {
+        "operation": "multiply",
+        "a": -4,
+        "b": -3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 12
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "divide-positive",
+      "input": {
+        "operation": "divide",
+        "a": 9,
+        "b": 2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": 4.5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "divide-negative",
+      "input": {
+        "operation": "divide",
+        "a": -9,
+        "b": 2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "answer": -4.5
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "divide-by-zero",
+      "input": {
+        "operation": "divide",
+        "a": 9,
+        "b": 0
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "error": "division_by_zero"
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "error"
+          ],
+          "expected": "string"
+        }
+      ]
+    },
+    {
+      "id": "unsupported-operation",
+      "input": {
+        "operation": "power",
+        "a": 2,
+        "b": 3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "error": "unsupported_operation"
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "error"
+          ],
+          "expected": "string"
+        }
+      ]
+    },
+    {
+      "id": "missing-operand",
+      "input": {
+        "a": 2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "error": "invalid_operand"
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "error"
+          ],
+          "expected": "string"
+        }
+      ]
+    },
+    {
+      "id": "string-operand",
+      "input": {
+        "a": "2",
+        "b": 3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "error": "invalid_operand"
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "error"
+          ],
+          "expected": "string"
+        }
+      ]
+    },
+    {
+      "id": "boolean-operand",
+      "input": {
+        "a": true,
+        "b": 3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "error": "invalid_operand"
+          }
+        },
+        {
+          "kind": "type",
+          "path": [
+            "error"
+          ],
+          "expected": "string"
+        }
+      ]
+    }
+  ]
+}

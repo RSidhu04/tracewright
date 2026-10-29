@@ -1,0 +1,71 @@
+name: Tracewright CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python: ['3.11', '3.12']
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: tracewright_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      TRACEWRIGHT_TEST_DATABASE_URL: postgresql+psycopg://postgres:ci-only-password@localhost:5432/tracewright_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -r requirements-tested.txt && pip install --no-deps .
+      - run: pytest -q --junitxml=reports/tests.xml
+      - name: Verify observed and statistical gate behavior
+        shell: bash
+        run: |
+          baseline=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:baseline --revision sample-v1 --repeats 3)
+          candidate=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:candidate --revision sample-v2 --repeats 3)
+          set +e
+          tracewright compare "$baseline" "$candidate" --output reports/comparison.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          tracewright compare "$baseline" "$baseline"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidence-python-${{ matrix.python }}
+          path: reports/
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure isolated CI environment
+        run: |
+          echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" >> .env
+          echo "TRACEWRIGHT_API_TOKEN=$(openssl rand -hex 24)" >> .env
+      - run: docker compose up --build -d --wait
+      - run: docker compose exec -T api python scripts/smoke.py
+      - name: Prove database survives API restart
+        run: |
+          docker compose exec -T api tracewright demo --output /tmp/demo.json
+          docker compose restart api
+          docker compose up -d --wait
+          docker compose exec -T api python -c 'from tracewright.store import Store; assert len(Store().list()) >= 4'
+      - name: Logs and cleanup
+        if: always()
+        run: |
+          docker compose logs --no-color
+          docker compose down -v

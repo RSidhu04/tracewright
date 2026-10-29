@@ -6,6 +6,10 @@
 
 A production-style, single-workspace portfolio application built with **Python, FastAPI, Pydantic, PostgreSQL, SQLAlchemy, Alembic, pytest, Docker, and GitHub Actions**. Includes a responsive developer dashboard and CLI. It is not a production-certified hosted service or a calibrated LLM judge.
 
+**Demo: 20 scenarios · 100% → 75% pass rate · five observed regressions.**
+
+![Dashboard showing the 20-case synthetic calculator regression](docs/dashboard.png)
+
 ## What you can demonstrate
 
 - Run a versioned suite against baseline and candidate Python agents.
@@ -37,7 +41,7 @@ docker compose up --build -d --wait
 docker compose exec -T api tracewright demo --output /tmp/demo.json
 ```
 
-Open **http://localhost:8000**, paste `TRACEWRIGHT_API_TOKEN` from your local `.env`, and connect. Select `demo-baseline` as the baseline run and `demo-candidate` as the candidate. Click **Compare behavior**. The candidate intentionally loses negative signs: **100% → 75% pass rate**, five observed regressions, and **inconclusive** statistical evidence for 20 cases. Use Inspect to read the redacted trace, or promote a reference with a new name/version.
+Open **http://localhost:8000**, paste `TRACEWRIGHT_API_TOKEN` from your local `.env`, and connect. Select `demo-baseline` as the baseline run and `demo-candidate` as the candidate. Click **Compare behavior**. The candidate intentionally loses negative signs: **100% → 75% pass rate**, five observed regressions, and **inconclusive** statistical evidence for 20 scenarios. Use Inspect to read the redacted trace, or promote a reference with a new name/version.
 
 The demo command returns 0 because generating a demonstration succeeded. The actual `compare` gate returns 1 for this regression. The dashboard token lives in memory only; refresh or Disconnect clears access. Run selectors show the current page of 20 runs; use pagination to browse other pages. Baseline cards show the first 1,000 stored versions; use the paginated API for larger histories.
 
@@ -47,8 +51,6 @@ docker compose down  # Keeps PostgreSQL data in the named volume
 ```
 
 PostgreSQL is not exposed on a host port. The app binds to loopback. A migration service runs before the API starts; the API image runs as a non-root user with a read-only filesystem and temporary `/tmp`. `docker compose down -v` destroys the demo database; use only when you intentionally want to discard it.
-
-![Dashboard showing the 20-case synthetic calculator regression](docs/dashboard.png)
 
 [Sample regression report](docs/sample-comparison.json). Test credentials in fixtures and CI are fake, disposable examples; never reuse them for a deployed service.
 
@@ -65,8 +67,6 @@ export TRACEWRIGHT_API_TOKEN="$(python -c 'import secrets; print(secrets.token_h
 tracewright demo
 uvicorn tracewright.api:create_app --factory --host 127.0.0.1 --port 8000
 ```
-
-Use `pip install -e '.[dev]'` for editable development on standard Python environments. The bundled desktop Python used during development ignored editable path files, so a regular package installation was used for CLI validation.
 
 For PostgreSQL, set `TRACEWRIGHT_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DB`, then run `tracewright migrate` once before starting the API. URL-encode reserved characters in credentials. The SQLite default is `tracewright.db`; override it with `TRACEWRIGHT_DB` or CLI `--db` before the subcommand. PostgreSQL schemas are never created implicitly by application startup.
 

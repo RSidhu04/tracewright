@@ -1,0 +1,109 @@
+{
+  "name": "inventory-llm",
+  "version": "1.0.0",
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "empty-stock",
+      "input": {
+        "sku": "empty",
+        "threshold": 5
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "empty",
+            "stock": 0,
+            "reorder": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "at-threshold",
+      "input": {
+        "sku": "boundary",
+        "threshold": 5
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "boundary",
+            "stock": 5,
+            "reorder": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "above-threshold",
+      "input": {
+        "sku": "healthy",
+        "threshold": 5
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "healthy",
+            "stock": 12,
+            "reorder": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "zero-threshold",
+      "input": {
+        "sku": "empty",
+        "threshold": 0
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "empty",
+            "stock": 0,
+            "reorder": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "below-high-threshold",
+      "input": {
+        "sku": "healthy",
+        "threshold": 20
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "healthy",
+            "stock": 12,
+            "reorder": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "just-below-stock",
+      "input": {
+        "sku": "boundary",
+        "threshold": 4
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "expected": {
+            "sku": "boundary",
+            "stock": 5,
+            "reorder": false
+          }
+        }
+      ]
+    }
+  ]
+}

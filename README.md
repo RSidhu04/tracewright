@@ -1,5 +1,7 @@
 # Tracewright
 
+[![Tracewright CI](https://github.com/RSidhu04/tracewright/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/RSidhu04/tracewright/actions/workflows/ci.yml)
+
 **Regression testing for AI agent behavior.** Capture redacted execution evidence, evaluate deterministic assertions, compare candidate runs, and promote immutable baseline versions.
 
 A production-style, single-workspace portfolio application built with **Python, FastAPI, Pydantic, PostgreSQL, SQLAlchemy, Alembic, pytest, Docker, and GitHub Actions**. Includes a responsive developer dashboard and CLI. It is not a production-certified hosted service or a calibrated LLM judge.
@@ -16,7 +18,7 @@ A production-style, single-workspace portfolio application built with **Python, 
 
 ## Five-minute Docker demo
 
-Prerequisites: Git, Docker Engine/Desktop with Compose v2, and Python 3 to generate local configuration. Repository access requires your GitHub account because the repository is private.
+Prerequisites: Git, Docker Engine/Desktop with Compose v2, and Python 3 to generate local configuration.
 
 ```sh
 git clone https://github.com/RSidhu04/tracewright.git
@@ -35,7 +37,7 @@ docker compose up --build -d --wait
 docker compose exec -T api tracewright demo --output /tmp/demo.json
 ```
 
-Open **http://localhost:8000**, paste `TRACEWRIGHT_API_TOKEN` from your local `.env`, and connect. Select `demo-baseline` as the baseline run and `demo-candidate` as the candidate. Click **Compare behavior**. The candidate intentionally loses negative signs: **100% → 50% pass rate**, two observed regressions, and **inconclusive** statistical evidence for four cases. Use Inspect to read the redacted trace, or promote a reference with a new name/version.
+Open **http://localhost:8000**, paste `TRACEWRIGHT_API_TOKEN` from your local `.env`, and connect. Select `demo-baseline` as the baseline run and `demo-candidate` as the candidate. Click **Compare behavior**. The candidate intentionally loses negative signs: **100% → 75% pass rate**, five observed regressions, and **inconclusive** statistical evidence for 20 cases. Use Inspect to read the redacted trace, or promote a reference with a new name/version.
 
 The demo command returns 0 because generating a demonstration succeeded. The actual `compare` gate returns 1 for this regression. The dashboard token lives in memory only; refresh or Disconnect clears access. Run selectors show the current page of 20 runs; use pagination to browse other pages. Baseline cards show the first 1,000 stored versions; use the paginated API for larger histories.
 
@@ -45,6 +47,10 @@ docker compose down  # Keeps PostgreSQL data in the named volume
 ```
 
 PostgreSQL is not exposed on a host port. The app binds to loopback. A migration service runs before the API starts; the API image runs as a non-root user with a read-only filesystem and temporary `/tmp`. `docker compose down -v` destroys the demo database; use only when you intentionally want to discard it.
+
+![Dashboard showing the 20-case synthetic calculator regression](docs/dashboard.png)
+
+[Sample regression report](docs/sample-comparison.json). Test credentials in fixtures and CI are fake, disposable examples; never reuse them for a deployed service.
 
 ## Local Python development
 
@@ -67,8 +73,8 @@ For PostgreSQL, set `TRACEWRIGHT_DATABASE_URL=postgresql+psycopg://USER:PASSWORD
 ## CLI workflow
 
 ```sh
-BASE=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:baseline --revision sample-v1 --repeats 3)
-CAND=$(tracewright run examples/calculator.v1.json --agent tracewright.sample:candidate --revision sample-v2 --repeats 3)
+BASE=$(tracewright run examples/calculator.v2.json --agent tracewright.sample:baseline --revision sample-v1 --repeats 3)
+CAND=$(tracewright run examples/calculator.v2.json --agent tracewright.sample:candidate --revision sample-v2 --repeats 3)
 tracewright baseline calculator 1 "$BASE" --note "Reviewed synthetic reference"
 tracewright compare "$BASE" "$CAND" --output reports/comparison.json
 # Expected exit 1: candidate regresses.
@@ -84,7 +90,7 @@ Exit codes: **0** operation or selected gate passed, **1** gate failed, **2** in
 
 Agents are synchronous importable callables: `agent(inputs: dict, trace, seed: int) -> JSON value`. `trace.emit('tool.call', {...})` captures explicit events. Install custom modules as packages or set `PYTHONPATH` to their directory. The CLI launches each trial in a fresh child process with a default 10-second timeout; override with `--timeout`. It suppresses agent stdout/stderr to keep the run-ID protocol usable. This is process isolation for reliability, **not a sandbox for hostile code**.
 
-Suites are JSON files with `schema_version`, `name`, `version`, and nonempty `cases`. Each case has a unique ID, input dictionary, and assertions. See [calculator.v1.json](examples/calculator.v1.json). Assertions support `equals`, `contains`, and JSON `type` checks with paths expressed as lists of object keys/list indices. All assertions must pass. Missing paths fail; booleans are not numbers. `equals` checks type at the selected value and then Python equality; nested equality follows Python container semantics. No code is evaluated from assertion definitions.
+Suites are JSON files with `schema_version`, `name`, `version`, and nonempty `cases`. Each case has a unique ID, input dictionary, and assertions. See [calculator.v2.json](examples/calculator.v2.json). Assertions support `equals`, `contains`, and JSON `type` checks with paths expressed as lists of object keys/list indices. All assertions must pass. Missing paths fail; booleans are not numbers. `equals` checks type at the selected value and then Python equality; nested equality follows Python container semantics. No code is evaluated from assertion definitions.
 
 The suite fingerprint hashes canonical full suite content. Comparisons require matching fingerprints, repeats, seeds, and case/trial keys. Version labels alone cannot hide changed cases. Agent `--revision` is a declared label: use a Git commit plus model/prompt identifier, but do not treat it as automatic code attestation. A supplied seed is only effective if the agent/provider respects it.
 
@@ -116,6 +122,12 @@ The dashboard is served at `/`; interactive schema documentation is at `/docs`. 
 
 See [API examples](docs/api.md), [architecture](docs/architecture.md), and [operations](docs/operations.md).
 
+## Optional real LLM demo and interview preparation
+
+The [OpenAI inventory agent](docs/llm-demo.md) uses one read-only tool and deterministic assertions. Its candidate changes the prompt at a boundary condition. Integration tests use mocked responses; a live model run is **not yet verified**. Configure credentials locally and run `python scripts/llm_demo.py` to collect real evidence. No LLM judge or calibrated scoring is involved.
+
+Use the [seven-topic code walkthrough](docs/code-walkthrough.md) to practice transactions, validation, timeouts, redaction, fingerprints, statistics, Docker, and CI.
+
 ## SWE-bench
 
 Tracewright can ingest the official harness summary's `resolved_ids` for a predeclared manifest of instance IDs and dataset revision. Tasks absent from the resolved list count as failures, including incomplete/error cases, so the denominator does not shrink after evaluation.
@@ -135,7 +147,7 @@ pytest -q
 TRACEWRIGHT_TEST_DATABASE_URL='postgresql+psycopg://...' pytest -q
 ```
 
-The [CI workflow](.github/workflows/ci.yml) tests Python 3.11/3.12 with PostgreSQL, verifies regression exit codes, uploads reports, builds Docker Compose, runs real HTTP smoke checks, and checks persistence across API restart. The [release workflow](.github/workflows/release.yml) builds and publishes a version-tagged GHCR image on `v*` tags; production rollout is deliberately operator-controlled. No release tag or public deployment is created by this implementation.
+The [CI workflow](.github/workflows/ci.yml) scans full Git history with Gitleaks and posts a comparison summary on same-repository pull requests (fork PRs skip the write-enabled job). It tests Python 3.11/3.12 with PostgreSQL, verifies regression exit codes, uploads reports, builds Docker Compose, runs real HTTP smoke checks, and checks persistence across API restart. The [release workflow](.github/workflows/release.yml) builds and publishes a version-tagged GHCR image on `v*` tags; production rollout is deliberately operator-controlled. No release tag or public deployment is created by this implementation.
 
 [Verification results](docs/verification.md) distinguish tested behavior from configured-only features. [requirements-tested.txt](requirements-tested.txt) records tested dependency versions; it is not a hash-verified supply-chain lock.
 
@@ -143,4 +155,4 @@ The [CI workflow](.github/workflows/ci.yml) tests Python 3.11/3.12 with PostgreS
 
 This is a single-workspace application with one shared bearer token, not multi-tenant SaaS. There is no RBAC, SSO, token management UI, distributed task queue, hardened agent sandbox, CPU/memory enforcement, alerting, or fleet monitoring. The web API receives results; it does not run arbitrary agents. Redaction is best effort. Trial wall-clock durations are descriptive, not a latency significance test. Large workloads need normalized result storage, aggregate queries, trace retention, and operational load testing.
 
-LLM judging is deferred until human-labeled rubrics and held-out validation exist. No judge is claimed calibrated. See [SECURITY.md](SECURITY.md), [contributing](CONTRIBUTING.md), and [portfolio walkthrough](docs/portfolio.md). MIT licensed; repository visibility remains private until the owner chooses to publish it.
+LLM judging is deferred until human-labeled rubrics and held-out validation exist. No judge is claimed calibrated. See [SECURITY.md](SECURITY.md), [contributing](CONTRIBUTING.md), and [portfolio walkthrough](docs/portfolio.md). MIT licensed; this repository is public.

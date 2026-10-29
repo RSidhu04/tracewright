@@ -1,40 +1,107 @@
 {
-  "baseline_id": "3bb8f9ba-9f19-4023-95ef-29fd216beb0f",
-  "candidate_id": "52292f03-462e-495d-89be-961bb07694b3",
+  "baseline_id": "c626eec1-bdad-43b0-b494-4c0d16ab15b3",
+  "candidate_id": "ad916579-101d-44f7-a510-10b6d8ed3d56",
   "baseline_pass_rate": 1.0,
-  "candidate_pass_rate": 0.5,
-  "delta": -0.5,
-  "case_count": 4,
-  "paired_trials": 12,
+  "candidate_pass_rate": 0.75,
+  "delta": -0.25,
+  "case_count": 20,
+  "paired_trials": 20,
   "case_deltas": [
     {
-      "case_id": "both-negative",
+      "case_id": "add-both-negative",
       "delta": -1.0
     },
     {
-      "case_id": "negative",
-      "delta": -1.0
-    },
-    {
-      "case_id": "positive",
+      "case_id": "add-decimal",
       "delta": 0.0
     },
     {
-      "case_id": "zero",
+      "case_id": "add-large",
+      "delta": 0.0
+    },
+    {
+      "case_id": "add-negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "add-positive",
+      "delta": 0.0
+    },
+    {
+      "case_id": "add-zero",
+      "delta": 0.0
+    },
+    {
+      "case_id": "boolean-operand",
+      "delta": 0.0
+    },
+    {
+      "case_id": "divide-by-zero",
+      "delta": 0.0
+    },
+    {
+      "case_id": "divide-negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "divide-positive",
+      "delta": 0.0
+    },
+    {
+      "case_id": "missing-operand",
+      "delta": 0.0
+    },
+    {
+      "case_id": "multiply-negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "multiply-positive",
+      "delta": 0.0
+    },
+    {
+      "case_id": "multiply-two-negatives",
+      "delta": 0.0
+    },
+    {
+      "case_id": "multiply-zero",
+      "delta": 0.0
+    },
+    {
+      "case_id": "string-operand",
+      "delta": 0.0
+    },
+    {
+      "case_id": "subtract-equal",
+      "delta": 0.0
+    },
+    {
+      "case_id": "subtract-negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "subtract-positive",
+      "delta": 0.0
+    },
+    {
+      "case_id": "unsupported-operation",
       "delta": 0.0
     }
   ],
   "observed_regressions": [
-    "both-negative",
-    "negative"
+    "add-both-negative",
+    "add-negative",
+    "divide-negative",
+    "multiply-negative",
+    "subtract-negative"
   ],
   "statistical_status": "inconclusive",
   "interval": [
-    -1.0,
-    0.8581015157406195
+    -0.8573614619083052,
+    0.3573614619083052
   ],
   "alpha": 0.05,
-  "tolerance": 0,
+  "tolerance": 0.0,
   "method": "case-level Hoeffding bounded-mean interval",
   "caveat": "Coverage requires independent representative cases. Curated/correlated suites do not establish population reliability. Repeats do not increase case sample size. No per-case significance claims; no multiple-comparison correction. Preselect one comparison and alpha."
 }

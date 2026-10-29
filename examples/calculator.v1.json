@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "name": "calculator",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "positive",
+      "input": {
+        "a": 2,
+        "b": 3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "path": [
+            "answer"
+          ],
+          "expected": 5
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "negative",
+      "input": {
+        "a": -5,
+        "b": 2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "path": [
+            "answer"
+          ],
+          "expected": -3
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "zero",
+      "input": {
+        "a": 2,
+        "b": -2
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "path": [
+            "answer"
+          ],
+          "expected": 0
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    },
+    {
+      "id": "both-negative",
+      "input": {
+        "a": -2,
+        "b": -3
+      },
+      "assertions": [
+        {
+          "kind": "equals",
+          "path": [
+            "answer"
+          ],
+          "expected": -5
+        },
+        {
+          "kind": "type",
+          "path": [
+            "answer"
+          ],
+          "expected": "number"
+        }
+      ]
+    }
+  ]
+}

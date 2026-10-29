@@ -1,0 +1,40 @@
+{
+  "baseline_id": "3bb8f9ba-9f19-4023-95ef-29fd216beb0f",
+  "candidate_id": "52292f03-462e-495d-89be-961bb07694b3",
+  "baseline_pass_rate": 1.0,
+  "candidate_pass_rate": 0.5,
+  "delta": -0.5,
+  "case_count": 4,
+  "paired_trials": 12,
+  "case_deltas": [
+    {
+      "case_id": "both-negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "negative",
+      "delta": -1.0
+    },
+    {
+      "case_id": "positive",
+      "delta": 0.0
+    },
+    {
+      "case_id": "zero",
+      "delta": 0.0
+    }
+  ],
+  "observed_regressions": [
+    "both-negative",
+    "negative"
+  ],
+  "statistical_status": "inconclusive",
+  "interval": [
+    -1.0,
+    0.8581015157406195
+  ],
+  "alpha": 0.05,
+  "tolerance": 0,
+  "method": "case-level Hoeffding bounded-mean interval",
+  "caveat": "Coverage requires independent representative cases. Curated/correlated suites do not establish population reliability. Repeats do not increase case sample size. No per-case significance claims; no multiple-comparison correction. Preselect one comparison and alpha."
+}

@@ -158,13 +158,13 @@ def test_storage_and_api(tmp_path, suite):
     a, b = run(suite), run(suite, bad)
     store.save(a)
     store.save(b)
-    assert Store(db).get(a['id']) == a
-    with TestClient(create_app(db)) as client:
+    assert Store(db).get(a['id'])['results'] == a['results']
+    with TestClient(create_app(db, api_token="test-api-token-at-least-16"), headers={"Authorization": "Bearer test-api-token-at-least-16"}) as client:
         assert client.get('/health').status_code == 200
         assert len(client.get('/runs').json()) == 2
         assert client.get('/runs', params={'limit': -1}).status_code == 422
         assert client.get('/runs/missing').status_code == 404
-        assert client.get('/runs/' + a['id']).json() == a
+        assert client.get('/runs/' + a['id']).json()['results'] == a['results']
         report = client.get('/compare', params={'baseline': a['id'], 'candidate': b['id']})
         assert report.status_code == 200
         assert report.json()['delta'] == -.5

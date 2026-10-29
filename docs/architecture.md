@@ -1,40 +1,46 @@
-# Architecture
+# Architecture and engineering decisions
 
 ```mermaid
 flowchart LR
-    S[Versioned JSON suite] --> V[Pydantic validation and fingerprint]
-    V --> R[Local CLI runner]
-    A[Trusted Python agent] --> R
-    R --> C[Deterministic assertions on raw output]
-    R --> T[Explicit trace events]
-    C --> X[Redaction boundary]
-    T --> X
-    X --> D[(SQLite run snapshots)]
-    D --> P[Paired comparison]
-    P --> J[JSON report and CI exit code]
-    D --> F[Read-only FastAPI]
-    P --> F
+  S[Versioned suite] --> CLI[CLI runner]
+  CLI --> W[Fresh child process per trial]
+  W --> A[Deterministic assertions]
+  A --> R[Redaction and validation]
+  E[External harness / SWE-bench report] --> R
+  R --> L[(Local SQLite optional)]
+  L --> I[Authenticated run ingestion]
+  I --> P[(PostgreSQL)]
+  M[Alembic migration job] --> P
+  P --> B[Immutable baseline registry]
+  P --> C[Paired comparison engine]
+  C --> G[CLI gate and JSON report]
+  C --> D[Developer dashboard]
+  B --> D
+  P --> D
 ```
 
-## Components
+## Boundaries
 
-- `models.py`: strict schema shape, required nonempty cases/assertions and unique case IDs. Schema version and suite version are separate.
-- `runner.py`: sequential execution, copied inputs, explicit seed, JSON output validation, timing, errors, trace snapshots, and fingerprinting.
-- `assertions.py`: three deterministic checks without eval, code injection, or a judge.
-- `redaction.py`: recursively masks configured secrets and common credential/PII patterns.
-- `store.py`: connection-per-operation SQLite repository, transactional insert-only persistence.
-- `compare.py`: pairing validation, case-level changes, conservative interval, explicit decision rules.
-- `cli.py`: run and compare orchestration, machine-readable run IDs and report files.
-- `api.py`: app factory for read-only inspection and comparison, isolated databases in tests.
+Execution is separate from serving. The CLI can write directly to a configured database or upload a redacted local record to the API. The API does not import agent modules or execute patches. A bearer token protects data operations. A static, same-origin dashboard consumes those operations with an in-memory token and uses text nodes for all untrusted evidence.
 
-## Storage and consistency
+Each CLI trial runs in a new Python subprocess. stdout/stderr are suppressed, normal trace emission is bounded, output is JSON-checked, and a timeout kills the process group on POSIX. This protects the harness from ordinary hangs/global-state contamination. It is not a security boundary against malicious code, escaped descendants, native memory exhaustion, or deliberate protocol tampering. The Python `evaluate` function still supports in-process callables for trusted tests/integration; that path has no timeout.
 
-`runs(id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload TEXT NOT NULL)` stores one complete redacted JSON snapshot per run. Its payload includes suite identity/hash, declared agent revision, seed/repeats, assertion booleans, output, events, duration, and exception class for each trial. Raw cases are not stored. Whole-run inserts are atomic; crashes before completion lose the in-memory run, and failures during insertion roll back. Duplicate run IDs fail instead of overwriting baseline evidence. Schema migrations, partial-run recovery, and ingestion validation are future work.
+## Persistence and migrations
 
-SQLite avoids provisioning a separate service for one sequential local runner. PostgreSQL becomes appropriate with multiple workers and shared authenticated access. A JSON snapshot keeps this milestone simple but is less efficient for cross-run analytics than normalized trials and assertions.
+- `tw_runs`: UUID primary key, timestamp, indexed suite hash, redacted JSON payload as text. Append-only via application API.
+- `tw_baselines`: composite primary key `(name, version)`, foreign key to run, timestamp, redacted note. Versions are explicit, immutable, and never silently redirected.
+- `alembic_version`: migration revision. PostgreSQL startup does not auto-migrate; a single deployment migration job runs first.
 
-## Decisions and limits
+SQLAlchemy transactions and database uniqueness provide concurrency semantics. An identical run-ID retry succeeds idempotently. A changed payload under an existing ID fails with conflict. Concurrent creation of the same baseline version produces one winner and one conflict. Baseline references are checked and enforced by foreign keys. Stored JSON is validated before and after redaction, then sized before insertion. The client is trusted to report assertion truth: consistency checks cannot prove an external evaluator was honest.
 
-Evaluation and reads use the same Python comparison function, so the API and CLI share policy. The API cannot import or execute agents. Report computation is synchronous; large traces and suites are not bounded yet. Agent module loading remains a trusted-code operation. Persistent global state in agents can defeat repeat independence; the runner does not reset module globals. Durations are descriptive wall-clock timings, not performance regressions or provider costs.
+SQLite auto-migrates for local development and tests. PostgreSQL is used for the shared service and concurrency tests. JSON snapshots preserve evidence cheaply at portfolio scale but require reading payloads for summary calculations; normalized trials and materialized summaries are the next scalability step. v0.1's `runs` table is left untouched; v0.2 uses `tw_*` tables. Export old records with v0.1 and explicitly ingest them after review if migration of historical evidence is needed.
 
-Version identity and pairing prevent accidental apples-to-oranges comparisons, but user-supplied revision labels do not verify code identity. Redaction limits retained evidence; it does not make untrusted code safe. Deterministic assertions cover only properties specified by test authors, not overall answer quality.
+## Error and security behavior
+
+2 MB request and stored-run limits, 10,000 trials per run, 100 events per trial, and schema checks bound normal ingestion. CLI emission additionally limits individual event and output sizes. Request validation errors do not echo raw inputs. Database exceptions return a generic 503; readiness checks fail until tables exist. No mutation endpoints delete runs or baseline versions. Immutable here means application behavior, not tamper-proof storage: a database administrator can change records.
+
+All results endpoints require a constant-time bearer comparison. No cookies or cross-origin access are enabled. Static assets use a strict content security policy; interactive Swagger/ReDoc pages use their required CDN assets. Shared-token authentication is intentionally simpler than a user directory and is unsuitable for tenant isolation.
+
+## CI/CD
+
+GitHub Actions verifies both Python versions, PostgreSQL persistence, immutable-baseline races, error/privacy boundaries, CLI gate behavior, Docker build/startup, live HTTP ingestion/comparison, and persistence after API restart. Version tags configure GHCR image publication. Deployment remains a reviewed operator step with explicit migration, health checks, TLS, backup, and rollback policy. No production availability or throughput claims have been measured.

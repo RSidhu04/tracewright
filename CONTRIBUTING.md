@@ -1,5 +1,7 @@
 # Contributing
 
-Use Python 3.11+, create a virtual environment, install `pip install -e '.[dev]'`, and run `pytest -q`. Keep changes scoped and include tests for behavioral changes. Use synthetic fixtures with no real credentials. Document assertion or comparison semantics when changing them. Preserve CLI exit codes and suite compatibility checks.
+Use Python 3.11 or 3.12. Install `pip install -e '.[dev]'` in a virtual environment and run `pytest -q`. Set `TRACEWRIGHT_TEST_DATABASE_URL` to a disposable PostgreSQL database to exercise migrations and concurrent baseline writes. Tests without that variable skip only the PostgreSQL contract test.
 
-Before proposing a judge, supply human labels, the labeling rubric, held-out agreement measurements, and a calibration/drift evaluation plan. Do not present model agreement as ground truth.
+Keep changes scoped, use synthetic data, and include behavioral tests. Preserve ingestion idempotency, baseline immutability, CLI exit codes, and suite compatibility rules. Add an Alembic revision for schema changes; do not edit an applied migration. Review both SQLite and PostgreSQL paths. New UI interactions must handle unauthorized/empty/error states and avoid inserting untrusted HTML.
+
+Use meaningful commits describing implemented behavior, not fabricated dates or a simulated development timeline. Run Docker Compose smoke checks before merging deployment changes. For judge proposals, include a labeling rubric, human labels, held-out validation, disagreement analysis, and drift/calibration measurements. Model agreement alone is not ground truth.
